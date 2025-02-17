@@ -3,7 +3,7 @@ import torch
 from torchvision import transforms, models
 from PIL import Image
 from googletrans import Translator
-import io
+import asyncio
 
 # Load pre-trained model (ResNet18 from torchvision)
 def load_model():
@@ -36,16 +36,21 @@ def predict_diagnosis(image, model):
         confidence = prediction[0, predicted_class].item()  # Confidence score
     return predicted_class, confidence
 
-# Translate text once using Translator
-translator = Translator()
-
-def translate_text(text, target_language):
+# Asynchronous translation function
+async def translate_text_async(text, target_language):
+    translator = Translator()
     try:
-        translation = translator.translate(text, dest=target_language)
+        translation = await asyncio.to_thread(translator.translate, text, dest=target_language)
         return translation.text
     except Exception as e:
         st.error(f"Error during translation: {e}")
         return text
+
+# Function to run translation asynchronously
+def translate_text(text, target_language):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    return loop.run_until_complete(translate_text_async(text, target_language))
 
 # Streamlit UI
 st.title("X-ray Report Diagnosis System")
@@ -77,16 +82,13 @@ if uploaded_file is not None:
             if model is not None:
                 predicted_class, confidence = predict_diagnosis(image, model)
                 
-                # Map predicted class index to human-readable label
-                # Using ImageNet classes as an example (X-ray models might need custom labels)
-                # ImageNet class labels (Here, using a few example categories; you may need a custom model for X-ray)
-                imagenet_labels = {
-                    0: "Airplane", 1: "Automobile", 2: "Bird", 3: "Cat", 4: "Dog", 5: "Frog", 6: "Horse", 7: "Ship", 8: "Truck"
-                    # Add more ImageNet class labels as needed (1,000 total classes)
+                # Map predicted class index to human-readable label (for X-ray)
+                # This is a placeholder; you will need a custom model and corresponding class mapping for actual X-ray labels
+                diagnosis_map = {
+                    0: "Normal", 1: "Pneumonia", 2: "COVID-19", 3: "Tuberculosis"  # Example classes
                 }
                 
-                # You would need to replace this mapping with actual X-ray specific classes if available
-                predicted_label = imagenet_labels.get(predicted_class, "Unknown Class")
+                predicted_label = diagnosis_map.get(predicted_class, "Unknown Diagnosis")
                 translated_diagnosis = translate_text(f"Diagnosis: {predicted_label} (Confidence: {confidence * 100:.2f}%)", language)
 
                 # Display results
