@@ -76,14 +76,13 @@ if uploaded_file is not None:
         if image.format not in ["JPEG", "PNG"]:
             st.error("Invalid image format. Please upload a valid JPEG or PNG image.")
         else:
-            st.image(image, caption="Uploaded X-ray", use_column_width=True)
+            st.image(image, caption="Uploaded X-ray", use_container_width=True)  # Fixing the deprecated warning
 
             # Make predictions if the model is loaded
             if model is not None:
                 predicted_class, confidence = predict_diagnosis(image, model)
                 
                 # Map predicted class index to human-readable label (for X-ray)
-                # This is a placeholder; you will need a custom model and corresponding class mapping for actual X-ray labels
                 diagnosis_map = {
                     0: "Normal", 1: "Pneumonia", 2: "COVID-19", 3: "Tuberculosis"  # Example classes
                 }
