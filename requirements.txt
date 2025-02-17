@@ -1,6 +1,5 @@
 streamlit
-tensorflow
-numpy
-opencv-python
+torch
+torchvision
 Pillow
 googletrans
