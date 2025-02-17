@@ -4,11 +4,14 @@ from torchvision import transforms, models
 from PIL import Image
 from googletrans import Translator
 import asyncio
+import torch.nn as nn
 
-# Load pre-trained model (ResNet18 from torchvision)
+# Load the pre-trained CheXNet model or a similar model (DenseNet for chest X-rays)
 def load_model():
     try:
-        model = models.resnet18(pretrained=True)  # Load a pre-trained ResNet model
+        # Using DenseNet121 as an example, as it's commonly used for X-ray classification
+        model = models.densenet121(pretrained=True)
+        model.classifier = nn.Linear(model.classifier.in_features, 14)  # Modify output for 14 classes (for ChestX-ray14 dataset)
         model.eval()  # Set model to evaluation mode
         return model
     except Exception as e:
@@ -81,12 +84,18 @@ if uploaded_file is not None:
             # Make predictions if the model is loaded
             if model is not None:
                 predicted_class, confidence = predict_diagnosis(image, model)
-                
-                # Map predicted class index to human-readable label (for X-ray)
+
+                # Debugging: Show the raw predicted class and confidence
+                st.write(f"Predicted Class Index: {predicted_class}")
+                st.write(f"Confidence: {confidence * 100:.2f}%")
+
+                # Map predicted class index to human-readable label (ChestX-ray14 classes)
                 diagnosis_map = {
-                    0: "Normal", 1: "Pneumonia", 2: "COVID-19", 3: "Tuberculosis"  # Example classes
+                    0: "Atelectasis", 1: "Cardiomegaly", 2: "Consolidation", 3: "Edema", 4: "Effusion",
+                    5: "Emphysema", 6: "Fibrosis", 7: "Hernia", 8: "Infiltration", 9: "Mass",
+                    10: "No Finding", 11: "Nodule", 12: "Pleural Thickening", 13: "Pneumonia"
                 }
-                
+
                 predicted_label = diagnosis_map.get(predicted_class, "Unknown Diagnosis")
                 translated_diagnosis = translate_text(f"Diagnosis: {predicted_label} (Confidence: {confidence * 100:.2f}%)", language)
 
