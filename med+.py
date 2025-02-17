@@ -1,7 +1,6 @@
 import streamlit as st
 import tensorflow as tf
-import numpy as np  
-import cv2
+import numpy as np
 from PIL import Image
 from googletrans import Translator
 
