@@ -71,7 +71,7 @@ def get_best_hospital(hospitals, patient_condition):
     Consider distance, specialty, and urgency.
     """
     try:
-        model = genai.GenerativeModel("gemini-pro")
+        model = genai.GenerativeModel("gemini-1.5-pro")
         response = model.generate_content(prompt)
         return response.text if response else "No recommendation available."
     
