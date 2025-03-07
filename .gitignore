@@ -1,0 +1,10 @@
+# Ignore Windows system files
+AppData/
+.DS_Store
+Thumbs.db
+
+# Ignore IDE, browser & log files
+.vscode/
+*.log
+*.tmp
+Google/Chrome/User Data/
