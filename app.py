@@ -34,17 +34,23 @@ def get_coordinates_from_place(place_name):
             params = {"q": place_name, "format": "json"}
             headers = {"User-Agent": "Streamlit-Ambulance-App"}
 
-        response = requests.get(url, params=params).json()
-
-        if response and "results" in response:  # Google Maps response
-            lat, lon = response["results"][0]["geometry"]["location"].values()
-        elif response:  # Nominatim response
-            lat, lon = float(response[0]["lat"]), float(response[0]["lon"])
-        else:
+        response = requests.get(url, params=params)
+        if response.status_code != 200:
+            st.error(f"❌ Geocoding API error: {response.status_code}")
+            return None, None
+        
+        data = response.json()
+        if not data:
             st.error("❌ Could not find location. Try entering a more specific place.")
             return None, None
 
+        if "results" in data:  # Google Maps response
+            lat, lon = data["results"][0]["geometry"]["location"].values()
+        else:  # Nominatim response
+            lat, lon = float(data[0]["lat"]), float(data[0]["lon"])
+
         return lat, lon
+
     except requests.exceptions.RequestException as e:
         st.error(f"❌ Network error: {e}")
         return None, None
@@ -56,13 +62,22 @@ def get_coordinates_from_place(place_name):
 def get_fastest_route(start_lat, start_lon, end_lat, end_lon):
     try:
         osrm_url = f"http://router.project-osrm.org/route/v1/driving/{start_lon},{start_lat};{end_lon},{end_lat}?overview=full&geometries=geojson"
-        response = requests.get(osrm_url).json()
+        response = requests.get(osrm_url)
 
-        if "routes" in response and response["routes"]:
-            return response["routes"][0]["geometry"]["coordinates"]
+        if response.status_code != 200:
+            st.error(f"❌ OSRM API error: {response.status_code}")
+            return None
+
+        data = response.json()
+        if "routes" in data and data["routes"]:
+            return data["routes"][0]["geometry"]["coordinates"]
         else:
             st.error("❌ No route found. Try different locations.")
             return None
+
+    except requests.exceptions.RequestException as e:
+        st.error(f"❌ Network error while fetching route: {e}")
+        return None
     except Exception as e:
         st.error(f"❌ Error fetching route: {e}")
         return None
