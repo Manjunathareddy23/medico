@@ -1,5 +1,6 @@
-streamlit 
-osmnx 
-folium 
-requests 
+streamlit
+osmnx
+folium
+requests
 google-generativeai
+streamlit-folium
