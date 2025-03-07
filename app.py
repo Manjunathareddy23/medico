@@ -29,21 +29,22 @@ def get_fastest_route(start_lat, start_lon, end_lat, end_lon):
         return None
 
 # Function to find nearest hospitals using OpenStreetMap
-def find_nearest_hospitals(lat, lon, num_hospitals=3):
+def find_nearest_hospitals(lat, lon, num_hospitals=3, search_radius=5000):
     try:
-        hospitals = ox.features_from_point((lat, lon), tags={"amenity": "hospital"})
-        
+        # Corrected function call with `dist`
+        hospitals = ox.features_from_point((lat, lon), tags={"amenity": "hospital"}, dist=search_radius)
+
         if hospitals.empty:
             return []
-        
+
         hospital_list = []
         for _, hospital in hospitals.iterrows():
             name = hospital.get("name", "Unknown Hospital")
             coords = hospital.geometry.centroid
             hospital_list.append((name, coords.y, coords.x))
-        
+
         return hospital_list[:num_hospitals]
-    
+
     except Exception as e:
         st.error(f"Error fetching hospitals: {e}")
         return []
@@ -76,6 +77,7 @@ st.title("🚑 AI-Based Smart Ambulance Routing System")
 # User inputs
 start_location = st.text_input("Enter Start Location (Latitude, Longitude):")
 patient_condition = st.text_area("Enter Patient Condition (e.g., 'Heart Attack, Needs ICU'):")
+search_radius = st.slider("Search Radius for Hospitals (meters)", min_value=1000, max_value=10000, value=5000, step=500)
 
 if start_location:
     try:
@@ -85,7 +87,7 @@ if start_location:
         st.stop()
 
     # Find nearest hospitals
-    hospitals = find_nearest_hospitals(start_lat, start_lon)
+    hospitals = find_nearest_hospitals(start_lat, start_lon, search_radius=search_radius)
 
     if hospitals:
         st.subheader("🏥 Nearest Hospitals:")
