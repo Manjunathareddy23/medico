@@ -4,10 +4,19 @@ import requests
 import osmnx as ox
 import google.generativeai as genai
 from streamlit_folium import folium_static
+from dotenv import load_dotenv
+import os
 
-# Configure Google Gemini API
-GEMINI_API_KEY = "your-gemini-api-key"
-genai.configure(api_key=GEMINI_API_KEY)
+# Load API keys from .env file
+load_dotenv()
+
+# Configure Google Gemini API securely
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+if not GEMINI_API_KEY:
+    st.error("❌ API key not found! Please set GEMINI_API_KEY in the .env file.")
+else:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 # Ensure OSMnx is properly configured
 ox.settings.use_cache = True
@@ -31,7 +40,6 @@ def get_fastest_route(start_lat, start_lon, end_lat, end_lon):
 # Function to find nearest hospitals using OpenStreetMap
 def find_nearest_hospitals(lat, lon, num_hospitals=3, search_radius=5000):
     try:
-        # Corrected function call with `dist`
         hospitals = ox.features_from_point((lat, lon), tags={"amenity": "hospital"}, dist=search_radius)
 
         if hospitals.empty:
