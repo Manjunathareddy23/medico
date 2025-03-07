@@ -23,33 +23,43 @@ else:
 ox.settings.use_cache = True
 ox.settings.log_console = False
 
-# Function to convert place name to coordinates using Nominatim API or Google Maps API
+# Function to convert place name to coordinates
 def get_coordinates_from_place(place_name):
     try:
         if GOOGLE_MAPS_API_KEY:  # Use Google Maps API if available
             url = "https://maps.googleapis.com/maps/api/geocode/json"
             params = {"address": place_name, "key": GOOGLE_MAPS_API_KEY}
-        else:  # Fallback to OpenStreetMap's Nominatim API
-            url = "https://nominatim.openstreetmap.org/search"
-            params = {"q": place_name, "format": "json"}
-            headers = {"User-Agent": "Streamlit-Ambulance-App"}
+            response = requests.get(url)
+            
+            if response.status_code == 403:
+                st.error("❌ Google Maps API error: Check your API key and billing settings.")
+                return None, None
+            elif response.status_code != 200:
+                st.error(f"❌ Geocoding API error: {response.status_code}")
+                return None, None
 
-        response = requests.get(url, params=params)
+            data = response.json()
+            if "results" in data and data["results"]:
+                lat, lon = data["results"][0]["geometry"]["location"].values()
+                return lat, lon
+
+        # Fallback to OpenStreetMap's Nominatim API
+        url = "https://nominatim.openstreetmap.org/search"
+        params = {"q": place_name, "format": "json"}
+        headers = {"User-Agent": "Streamlit-Ambulance-App"}
+
+        response = requests.get(url, params=params, headers=headers)
         if response.status_code != 200:
-            st.error(f"❌ Geocoding API error: {response.status_code}")
+            st.error(f"❌ Nominatim API error: {response.status_code}")
             return None, None
-        
+
         data = response.json()
-        if not data:
+        if data:
+            lat, lon = float(data[0]["lat"]), float(data[0]["lon"])
+            return lat, lon
+        else:
             st.error("❌ Could not find location. Try entering a more specific place.")
             return None, None
-
-        if "results" in data:  # Google Maps response
-            lat, lon = data["results"][0]["geometry"]["location"].values()
-        else:  # Nominatim response
-            lat, lon = float(data[0]["lat"]), float(data[0]["lon"])
-
-        return lat, lon
 
     except requests.exceptions.RequestException as e:
         st.error(f"❌ Network error: {e}")
