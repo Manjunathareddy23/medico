@@ -22,6 +22,22 @@ else:
 ox.settings.use_cache = True
 ox.settings.log_console = False
 
+# Function to convert place name to coordinates using Nominatim API
+def get_coordinates_from_place(place_name):
+    try:
+        url = f"https://nominatim.openstreetmap.org/search?q={place_name}&format=json"
+        response = requests.get(url).json()
+        
+        if response:
+            lat, lon = float(response[0]["lat"]), float(response[0]["lon"])
+            return lat, lon
+        else:
+            st.error("Could not find location. Try entering a more specific place.")
+            return None, None
+    except Exception as e:
+        st.error(f"Geocoding error: {e}")
+        return None, None
+
 # Function to get the fastest route using OSRM API
 def get_fastest_route(start_lat, start_lon, end_lat, end_lon):
     try:
@@ -83,15 +99,15 @@ def get_best_hospital(hospitals, patient_condition):
 st.title("🚑 AI-Based Smart Ambulance Routing System")
 
 # User inputs
-start_location = st.text_input("Enter Start Location (Latitude, Longitude):")
+accident_location = st.text_input("Enter Accident Location (e.g., Connaught Place, New Delhi):")
 patient_condition = st.text_area("Enter Patient Condition (e.g., 'Heart Attack, Needs ICU'):")
 search_radius = st.slider("Search Radius for Hospitals (meters)", min_value=1000, max_value=10000, value=5000, step=500)
 
-if start_location:
-    try:
-        start_lat, start_lon = map(float, start_location.split(","))
-    except ValueError:
-        st.error("Invalid format! Enter coordinates as 'Latitude, Longitude' (e.g., 28.7041, 77.1025).")
+if accident_location:
+    # Convert location name to latitude and longitude
+    start_lat, start_lon = get_coordinates_from_place(accident_location)
+
+    if start_lat is None or start_lon is None:
         st.stop()
 
     # Find nearest hospitals
